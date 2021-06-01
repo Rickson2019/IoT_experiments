@@ -10,7 +10,8 @@
 void setup()
 {
   Serial.begin (115200);  
-  Wire.begin (21, 22);   // sda= GPIO_21 /scl= GPIO_22
+//  Wire.begin (21, 22);   // sda= GPIO_21 /scl= GPIO_22     UNO
+  Wire.begin (D2, D1);   // sda= D2 /scl= D1                 ESP8266
 }
 
 void Scanner ()

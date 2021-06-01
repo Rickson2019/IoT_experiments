@@ -20,8 +20,12 @@ void setup() {
 
 
   HC12.begin(9600);               // Serial port to HC12
+
+  delay(100);
+  HC12.print("helloworld");
 }
 void loop() {
+  HC12.write("helloworld loop");
   while (HC12.available()) {        // If HC-12 has data
     Serial.write(HC12.read());      // Send the data to Serial monitor
   }
