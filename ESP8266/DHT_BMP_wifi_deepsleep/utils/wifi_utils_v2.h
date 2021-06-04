@@ -41,7 +41,7 @@ void wifi_connect()
     while (wifiMulti.run() != WL_CONNECTED)
     {
         delay(1000);
-        Serial.println(".");
+        Serial.print(".");
     }
     if (wifiMulti.run() == WL_CONNECTED)
     {
