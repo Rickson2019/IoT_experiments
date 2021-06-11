@@ -20,6 +20,18 @@ uint8_t DHTPin = DHT_DATA_PIN;
 float Temperature;
 float Humidity;
 
+void DHT_read(float *retval);
+void DHT_heatup();
+
+void DHT_heatup()
+{
+  DHT dht(DHTPin, DHTTYPE);
+  dht.begin();
+  Temperature = dht.readTemperature(); // Gets the values of the temperature
+  Humidity = dht.readHumidity();       // Gets the values of the humidity
+  delay(1000);
+}
+
 /**
    @params
 */
@@ -50,10 +62,10 @@ void DHT_read(float *retval)
   String json;
   serializeJson(doc, json);
 
-//  Serial.flush();
+  //  Serial.flush();
 
   retval[0] = Temperature;
   retval[1] = Humidity;
-  delay(1000);
+  // delay(1000);
 };
 //^^^^^^^^^^ TEMPERATURE SENSORS ^^^^^^^^^^^^^
