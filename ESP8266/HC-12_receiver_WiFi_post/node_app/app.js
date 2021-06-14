@@ -14,7 +14,15 @@ app.get('/', (req, res) => res.send('Hello World!'))
 
 
 app.post('/outdoor_1', (req, res) => {
-    console.log(req.body)
+    try {
+        console.log(Date.now());
+
+        console.log(req.body);
+
+    } catch (e) {
+        console.error(e);
+    }
+
 })
 
 

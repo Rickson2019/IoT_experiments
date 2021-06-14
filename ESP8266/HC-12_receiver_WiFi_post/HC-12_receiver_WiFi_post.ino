@@ -15,28 +15,61 @@ void setup() {
   Serial.begin(115200);             // Serial port to computer
   Serial.println("setup");
 
-  HC12.begin(9600);               // Serial port to HC12
+  HC12.begin(115200);               // Serial port to HC12
   Serial.println("Started");
   ESP.eraseConfig();
   wifi_connect();
 }
-void loop() {
-  String hc12_data = "";
 
+
+String post_data = "";
+int flag = 0;
+
+void loop() {
+
+  String hc12_data = "";
   while (HC12.available()) {        // If HC-12 has data
-    hc12_data += (char) HC12.read();
+    char next_char = (char) HC12.read();
+    hc12_data +=  next_char ;
+    if (next_char == '{') {
+      flag = 1;
+      
+    }
+    else if (next_char == '}') {
+      flag = 2;
+    }
+
     //    Serial.write(HC12.read());      // Send the data to Serial monitor
   }
-  // <<<<< never ever do delay() here! 
+  // <<<<< never ever do delay() here!
 
   if (hc12_data.length() != 0) {
-    Serial.println(hc12_data);
+    Serial.print(hc12_data);
+
+    if (flag != 0) {
+      post_data += hc12_data;
+    }
+
+    Serial.println();
+    Serial.println(post_data);
   }
 
-  http_post(hc12_data, "http://192.168.2.2:3000/outdoor_1");
 
-
-  while (Serial.available()) {      // If Serial monitor has data
-    HC12.write(Serial.read());      // Send that data to HC-12
+  if (flag == 2)
+  {
+//    http_post(post_data, "http://192.168.2.2:3000/outdoor_1");
+    post_data = "";
+    flag = 0;
   }
+
+
+
+
+
+
+
+
+  //  while (Serial.available()) {      // If Serial monitor has data
+  //    HC12.write(Serial.read());      // Send that data to HC-12
+  //  }
 }
