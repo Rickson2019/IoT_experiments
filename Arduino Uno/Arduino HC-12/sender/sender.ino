@@ -6,7 +6,7 @@
 
 
 // HC12
-SoftwareSerial HC12(10, 11); // HC-12 TX Pin, HC-12 RX Pin
+SoftwareSerial HC12(2, 3); // HC-12 TX Pin, HC-12 RX Pin
 
 
 
