@@ -1,24 +1,50 @@
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
 </head>
+
 <body>
     <h2>Config</h2>
     <div>
         <p>
-            <label for="sta_ssid">NEW STA_SSID</span>
+            <label for="sta_ssid">NEW STA_SSID</label>
             <input id="sta_ssid" />
         </p>
         <p>
-            <label for="sta_password">NEW STA_PASSWORD</span>
+            <label for="sta_password">NEW STA_PASSWORD</label>
             <input id="sta_password" />
             <br />
             <br />
             <button id="update_sta">Update</button>
         </p>
     </div>
+    <script>
+        let btn_update_sta = document.getElementById("update_sta");
+
+        let sta_ssid = document.getElementById("sta_ssid");
+        let sta_password = document.getElementById("sta_password");
+
+        btn_update_sta.addEventListener("click", () => {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/update_sta', true);
+            xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+            let body = {
+                sta_ssid : sta_ssid.value,
+                sta_password : sta_password.value
+            }
+
+            xhr.onload = function () {
+                // do something to response
+                console.log(this.responseText);
+            };
+            xhr.send(JSON.stringify(body));
+        })
+
+    </script>
 </body>
+
 </html>

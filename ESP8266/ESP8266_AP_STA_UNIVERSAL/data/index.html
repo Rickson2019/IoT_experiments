@@ -14,8 +14,10 @@
   <h1>ESP8266 Web Server</h1>
   <p>GPIO state<strong> %STATE%</strong></p>
   <p>
+<!--
     <a href="/on"><button class="button">ON</button></a>
     <a href="/off"><button class="button button2">OFF</button></a>
+-->
   </p>
   <p>
     <span class="sensor-labels">Temperature</span>
@@ -33,6 +35,7 @@
     <sup class="units">hPa</sup>
   </p>
 </body>
+<!--
 <script>
   // 每隔 10 秒读温度
   setInterval(function ( ) {
@@ -46,7 +49,7 @@
     xhttp.send();
   }, 10000 ) ;
 
-  // 每隔 10秒 读取湿度信息 
+  // 每隔 10秒 读取湿度信息
   setInterval(function ( ) {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
@@ -70,4 +73,5 @@
     xhttp.send();
   }, 10000 ) ;
 </script>
+-->
 </html>
