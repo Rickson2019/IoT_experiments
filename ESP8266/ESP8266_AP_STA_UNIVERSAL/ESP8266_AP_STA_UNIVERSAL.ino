@@ -20,6 +20,8 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
+#include <ArduinoJson.h>
+
 Adafruit_BME280 bme; // I2C
 //Adafruit_BME280 bme(BME_CS); // hardware SPI
 //Adafruit_BME280 bme(BME_CS, BME_MOSI, BME_MISO, BME_SCK); // software SPI
@@ -257,9 +259,37 @@ void setup()
     Serial.println(params);
     if (request->hasParam("body", true))
     { // This is important, otherwise the sketch will crash if there is no body
-      Serial.println(request->getParam("body", true)->value());
+      String json_body = String(request->getParam("body", true)->value());
+      Serial.println(json_body);
       //      set_sta_ssid_password(ssid, pass);
-      request->send(200, "text/plain", request->getParam("body", true)->value());
+
+      DynamicJsonDocument doc(1024);
+      deserializeJson(doc, &json_body[0]);
+
+      const char* sta_ssid_new = doc["sta_ssid"];
+      const char* sta_password_new = doc["sta_password"];
+
+      strcpy(sta_ssid , sta_ssid_new);
+      strcpy(sta_password , sta_password_new);
+      
+      Serial.println(sta_ssid_new);
+      Serial.println(sta_password_new);
+      //      request->send(200, "text/plain", request->getParam("body", true)->value());
+
+
+      WiFi.disconnect();
+      ////      WiFi.mode(WIFI_OFF);
+      //      delay(4000);
+      //
+      //      Serial.println("disconencted");
+      ////      WiFi.mode(WIFI_AP_STA);
+      ////
+      //
+      //      // Print ESP32 Local IP Address
+      //      Serial.println(WiFi.localIP());
+      //      // Start server
+      //      server.begin();
+
     }
     else
     {
@@ -274,4 +304,19 @@ void setup()
 
 void loop()
 {
+  if (WiFi.status() !=  WL_CONNECTED) {
+    WiFi.begin(sta_ssid, sta_password);
+
+    while (WiFi.status() != WL_CONNECTED)
+    {
+      delay(1000);
+      Serial.println("Connecting to WiFi..");
+    }
+    
+    // Print ESP32 Local IP Address
+    Serial.println(WiFi.localIP());
+    // Start server
+    server.begin();
+
+  }
 }
