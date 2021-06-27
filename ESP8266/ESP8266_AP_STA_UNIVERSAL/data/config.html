@@ -5,46 +5,126 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        #h2_title {
+            text-align: center;
+        }
+
+        #div_sta_config {
+            text-align: center;
+            border-style: ridge;
+            /* width: fit-content; */
+            border-width: 2px;
+        }
+
+        #div_deepsleep_config {
+            text-align: center;
+            border-style: ridge;
+            /* width: fit-content; */
+            border-width: 2px;
+        }
+    </style>
 </head>
 
-<body>
-    <h2>Config</h2>
+<br>
+
+<h2 id='h2_title'>Config</h2>
+
+<!-- 用于调整WIFI_STA的ID和密码 -->
+<div id='div_sta_config'>
+    <p>
+        <label for="input_sta_ssid">NEW STA_SSID</label>
+        <input id="input_sta_ssid" />
+    </p>
+    <p>
+        <label for="input_sta_password">NEW STA_PASSWORD</label>
+        <input id="input_sta_password" />
+        <br />
+        <br />
+        <button id="btn_update_sta">Update</button>
+    </p>
+</div>
+
+<br />
+
+<!-- 用于调整发送传感器数据的频率 -->
+<div id='div_deepsleep_config'>
     <div>
         <p>
-            <label for="sta_ssid">NEW STA_SSID</label>
-            <input id="sta_ssid" />
+            <label for="deepsleep">Sensor Update Inteval</label>
+            <input type="number" id="input_deepsleep_minutes" value="0" />
+            <span>Minutes</span>
+            <br>
         </p>
+
         <p>
-            <label for="sta_password">NEW STA_PASSWORD</label>
-            <input id="sta_password" />
-            <br />
-            <br />
-            <button id="update_sta">Update</button>
+            <span>&nbsp;&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            <input type="number" id="input_deepsleep_seconds" value="0" />
+            <span>Seconds</span>
         </p>
+
+
     </div>
-    <script>
-        let btn_update_sta = document.getElementById("update_sta");
 
-        let sta_ssid = document.getElementById("sta_ssid");
-        let sta_password = document.getElementById("sta_password");
+    <p>
+        <button id="btn_update_deepsleep">Start Deepsleep Cycle</button>
+    </p>
+</div>
 
-        btn_update_sta.addEventListener("click", () => {
-            var xhr = new XMLHttpRequest();
-            xhr.open('POST', '/update_sta', true);
-            xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-            let body = {
-                sta_ssid : sta_ssid.value,
-                sta_password : sta_password.value
-            }
 
-            xhr.onload = function () {
-                // do something to response
-                console.log(this.responseText);
-            };
-            xhr.send(JSON.stringify(body));
-        })
+<script>
+    let btn_update_sta = document.getElementById("btn_update_sta");
 
-    </script>
+    let input_sta_ssid = document.getElementById("input_sta_ssid");
+    let input_sta_password = document.getElementById("input_sta_password");
+
+    let input_deepsleep_minutes = document.getElementById("input_deepsleep_minutes");
+    let input_deepsleep_seconds = document.getElementById("input_deepsleep_seconds");
+
+    btn_update_sta.addEventListener("click", () => {
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/update_sta', true);
+        xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        let body = {
+            sta_ssid: input_sta_ssid.value,
+            sta_password: input_sta_password.value,
+            // deepsleep settings:
+            deepsleep_minutes: input_deepsleep_minutes.value,
+            deepsleep_seconds: input_deepsleep_seconds.value
+        }
+
+        xhr.onload = function () {
+            // do something to response
+            console.log(this.responseText);
+        };
+        xhr.send(JSON.stringify(body));
+    })
+
+    let btn_update_deepsleep = document.getElementById('btn_update_deepsleep')
+
+    btn_update_deepsleep.addEventListener("click", () => {
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/update_sta', true);
+        xhr.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+        let body = {
+            sta_ssid: input_sta_ssid.value,
+            sta_password: input_sta_password.value,
+            // deepsleep settings:
+            deepsleep_minutes: input_deepsleep_minutes.value,
+            deepsleep_seconds: input_deepsleep_seconds.value
+        }
+
+        xhr.onload = function () {
+            // do something to response
+            console.log(this.responseText);
+        };
+        xhr.send(JSON.stringify(body));
+    })
+
+</script>
 </body>
 
 </html>
