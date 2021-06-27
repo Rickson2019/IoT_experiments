@@ -12,6 +12,11 @@ I was wondering how I could run the WiFi with the two different modes at the sam
 ## PURPOSE
 This is an experiment whose result will help enabling users to modify their devices's MQTT settings, WiFi ssid and password, types of sensors, sensor update rate and so on.
 
+## Use
+### Prerequisites
+- Install the ESPAsyncWebServer as well as ESPAsyncTCP libraries
+- 
+
 
 ## REFERENCES
 How to upload webpage files to an esp8266:
