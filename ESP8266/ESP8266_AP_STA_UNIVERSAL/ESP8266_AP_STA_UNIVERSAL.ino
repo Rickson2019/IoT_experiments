@@ -1,3 +1,4 @@
+// Originally by Rui Santos:
 /*
   Rui Santos
   Complete project details at https://RandomNerdTutorials.com
@@ -8,8 +9,7 @@
   The above copyright notice and this permission notice shall be included in all
   copies or substantial portions of the Software.
 */
-
-// Modified by Judao Zhong JudaoZhong@gmail.com
+// Modified by Judao Zhong (JudaoZhong@gmail.com)
 
 // Import required libraries
 #include <ESP8266WiFi.h>
@@ -199,10 +199,10 @@ void setup()
 
   // =========================== DATA READ ENDPOINTS ==============================
 
-//  server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest * request)
-//  {
-//    request->send_P(200, "text/plain", getTemperature().c_str());
-//  });
+  //  server.on("/temperature", HTTP_GET, [](AsyncWebServerRequest * request)
+  //  {
+  //    request->send_P(200, "text/plain", getTemperature().c_str());
+  //  });
   // ^^^^^^^^^^^^^^^^^^^^^^^^^^^ DATA READ ENDPOINTS ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
@@ -279,6 +279,30 @@ void setup()
     }
   });
 
+  // Change AP settings
+  // 睡眠模式的时长设置
+  server.on("/update_ap", HTTP_POST, [](AsyncWebServerRequest * request) {
+    Serial.println("updating deepsleep config");
+    if (request->hasParam("body", true))
+    {
+      // This is important, otherwise the sketch will crash if there is no body
+      String json_body = String(request->getParam("body", true)->value());
+      Serial.println(json_body);
+
+      DynamicJsonDocument doc(1024);
+      deserializeJson(doc, &json_body[0]);
+
+      const char* ap_ssid_new = doc["ap_ssid"];
+      const char* ap_password_new = doc["ap_password"];
+
+
+      strcpy(ap_ssid , ap_ssid_new);
+      strcpy(ap_password , ap_password_new);
+      Serial.println(ap_ssid);
+      Serial.println(ap_password);
+    }
+    
+  });
 
 
   // =========================== SETUPs ===========================================
