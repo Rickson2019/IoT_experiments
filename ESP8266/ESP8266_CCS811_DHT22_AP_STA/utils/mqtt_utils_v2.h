@@ -3,12 +3,24 @@
 // MQTT Broker
 const char *mqtt_broker = "192.168.2.2";
 
-// FIXME These should be configurable in the ino file later.
-const char *topic = "wemos-room-monitor";
-const char *mqtt_username = "";
-const char *mqtt_password = "";
-const int mqtt_port = 18080;
-// ^^^ Should be be configurable in the ino file later ^^^
+// // FIXME These should be configurable in the ino file later.
+// char *topic = "wemos-room-monitor";
+// char *mqtt_username = "";
+// char *mqtt_password = "";
+// int mqtt_port = 18080;
+// // ^^^ Should be be configurable in the ino file later ^^^
+
+// void load_mqtt_config(
+//     char *topic_str,
+//     char *mqtt_username_str,
+//     char *mqtt_password_str,
+//     int mqtt_port_int)
+// {
+//     topic = topic_str;
+//     mqtt_username = mqtt_username_str;
+//     mqtt_password = mqtt_password_str;
+//     mqtt_port = mqtt_port_int;
+// }
 
 //"wifiClient" defined in wifi_utils_v2.h
 PubSubClient client(wifiClient);

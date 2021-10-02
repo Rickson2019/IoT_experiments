@@ -41,8 +41,9 @@ String DHT_read()
   // Posting JSON to the edge device
   DynamicJsonDocument doc(128);
 
-  doc["DHT-temperature"] = dht.readTemperature();
-  doc["DHT-humidity"] = dht.readHumidity();
+  doc["sensor_model"] = "DHT22";                             // MQTT {sensor_model : String, ...}
+  doc["sensor_data"]["temperature"] = dht.readTemperature(); // {}
+  doc["sensor_data"]["humidity"] = dht.readHumidity();
 
   String json;
   serializeJson(doc, json);

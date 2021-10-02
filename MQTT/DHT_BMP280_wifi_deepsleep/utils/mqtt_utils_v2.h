@@ -1,15 +1,5 @@
 #include <PubSubClient.h>
 
-// MQTT Broker
-const char *mqtt_broker = "192.168.2.2";
-
-// FIXME These should be configurable in the ino file later.
-const char *topic = "wemos-room-monitor";
-const char *mqtt_username = "";
-const char *mqtt_password = "";
-const int mqtt_port = 18080;
-// ^^^ Should be be configurable in the ino file later ^^^
-
 //"wifiClient" defined in wifi_utils_v2.h
 PubSubClient client(wifiClient);
 void callback_function(char *topic, byte *payload, unsigned int length)
@@ -46,9 +36,10 @@ void connect_to_broker()
             delay(2000);
         }
     }
-    // publish and subscribe
-    client.publish(topic, "hello emqx");
+
     client.subscribe(topic);
+    // publish and subscribe
+    client.publish(topic, "{\"updating_device_info\" :true, \"device_name\": \"wemos-room-monitor-02\", \"sensors\":[\"DHT22\", \"BMP280\"]}");
 }
 
 // Update sensor data to MQTT
