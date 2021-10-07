@@ -28,6 +28,9 @@
 #include <WiFi.h>
 #include <WebServer.h>
 #include <WiFiClient.h>
+#include <ArduinoJson.h>
+
+#include <WebSocketsServer.h>
 
 #include <esp_bt.h>
 #include <esp_wifi.h>
@@ -64,6 +67,95 @@ OV2640 cam;
 
 
 WebServer server(80);
+
+WebSocketsServer webSocket = WebSocketsServer(81);
+
+// Called when receiving any WebSocket message
+void onWebSocketEvent(uint8_t num,
+                      WStype_t type,
+                      uint8_t * payload,
+                      size_t length) {
+
+  // Figure out the type of WebSocket event
+  switch (type) {
+
+    // Client has disconnected
+    case WStype_DISCONNECTED:
+      Serial.printf("[%u] Disconnected!\n", num);
+      break;
+
+    // New client has connected
+    case WStype_CONNECTED:
+      {
+        IPAddress ip = webSocket.remoteIP(num);
+        Serial.printf("[%u] Connection from ", num);
+        Serial.println(ip.toString());
+      }
+      break;
+
+    // Echo text message back to client
+    case WStype_TEXT: {
+        Serial.printf("[%u] Text: %s\n", num, payload);
+
+        for (int i = 0 ; i < sizeof(payload); i++) {
+          Serial.print(char(payload[i]));
+        }
+
+        StaticJsonDocument<200> doc;
+        DeserializationError error = deserializeJson(doc, payload);
+        //      if (error)
+        //      {
+        //        Serial.print(F("deserializeJson() failed: "));
+        //        Serial.println(error.f_str());
+        //        break;
+        //      }
+
+        double joy3X = doc["joy3X"];
+        double joy3Y = doc["joy3Y"];
+        String joyDirection = doc["joyDirection"];
+
+        if (joyDirection == "N") {
+          forward();
+        }
+        else if (joyDirection == "S") {
+          backward();
+        }
+        else if (joyDirection == "W") {
+          leftSpin();
+        }
+        else if (joyDirection == "E") {
+          rightSpin();
+        }
+        else if (joyDirection == "C") {
+          stopMoving();
+        }
+
+
+        Serial.println("joy3X");
+        Serial.println(joy3X);
+
+        Serial.println("joy3Y");
+        Serial.println(joy3Y);
+
+        Serial.println("joyDirection");
+        Serial.println(joyDirection);
+
+        webSocket.sendTXT(num, payload);
+        break;
+      }
+
+    // For everything else: do nothing
+    case WStype_BIN:
+    case WStype_ERROR:
+    case WStype_FRAGMENT_TEXT_START:
+    case WStype_FRAGMENT_BIN_START:
+    case WStype_FRAGMENT:
+    case WStype_FRAGMENT_FIN:
+    default:
+      break;
+  }
+}
+
 
 // ===== rtos task handles =========================
 // Streaming is implemented with 3 tasks:
@@ -138,8 +230,13 @@ void mjpegCB(void* pvParameters) {
   server.onNotFound(handleNotFound);
 
 
+  webSocket.begin();
+  webSocket.onEvent(onWebSocketEvent);
 
   server.begin();
+
+
+
 
   //=== loop() section  ===================
   xLastWakeTime = xTaskGetTickCount();
@@ -573,18 +670,19 @@ void lightsOff() {
 
 
 void loop() {
+  webSocket.loop();
 
-//    forward();
-//    delay(2000);
-//  
-//    backward();
-//    delay(2000);
-//  
-//    leftSpin();
-//    delay(2000);
-//  
-//    rightSpin();
-//    delay(2000);
+  //    forward();
+  //    delay(2000);
+  //
+  //    backward();
+  //    delay(2000);
+  //
+  //    leftSpin();
+  //    delay(2000);
+  //
+  //    rightSpin();
+  //    delay(2000);
 
-//  vTaskDelay(1000);
+  //  vTaskDelay(1000);
 }

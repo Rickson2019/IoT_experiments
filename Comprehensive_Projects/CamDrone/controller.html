@@ -1,0 +1,94 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <button onclick="forward()"> 👆 </button>
+    <button onclick="backward()"> 👇 </button>
+    <button onclick="leftSpin()"> 👈 </button>
+    <button onclick="rightSpin()"> 👉 </button>
+</body>
+
+
+<script type="text/javascript">
+    function leftSpin() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "http://192.168.4.1/leftSpin", true);
+        xhr.onload = function (e) {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    console.log(xhr.responseText);
+                } else {
+                    console.error(xhr.statusText);
+                }
+            }
+        };
+        xhr.onerror = function (e) {
+            console.error(xhr.statusText);
+        };
+        xhr.send(null);
+    }
+
+    function rightSpin() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "http://192.168.4.1/rightSpin", true);
+        xhr.onload = function (e) {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    console.log(xhr.responseText);
+                } else {
+                    console.error(xhr.statusText);
+                }
+            }
+        };
+        xhr.onerror = function (e) {
+            console.error(xhr.statusText);
+        };
+        xhr.send(null);
+    }
+
+    function forward() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "http://192.168.4.1/forward", true);
+        xhr.onload = function (e) {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    console.log(xhr.responseText);
+                } else {
+                    console.error(xhr.statusText);
+                }
+            }
+        };
+        xhr.onerror = function (e) {
+            console.error(xhr.statusText);
+        };
+        xhr.send(null);
+    }
+
+    function backward() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "http://192.168.4.1/backward", true);
+        xhr.onload = function (e) {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    console.log(xhr.responseText);
+                } else {
+                    console.error(xhr.statusText);
+                }
+            }
+        };
+        xhr.onerror = function (e) {
+            console.error(xhr.statusText);
+        };
+        xhr.send(null);
+    }
+
+
+</script>
+
+</html>
