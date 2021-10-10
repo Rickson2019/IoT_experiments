@@ -25,12 +25,21 @@
 #define PRO_CPU 0
 
 #include "src/OV2640.h"
+
+// #include <ESPAsyncTCP.h>       //
+// #include <ESPAsyncWebServer.h> // SPIFF purposes
+
+#include <WebServer.h>         // originally used
+
 #include <WiFi.h>
-#include <WebServer.h>
 #include <WiFiClient.h>
 #include <ArduinoJson.h>
 
-#include <WebSocketsServer.h>
+#include "SPIFFS.h"  // Helps the Web Server to serve JoyStick html files
+
+
+
+#include <WebSocketsServer.h> //Markus Sattler v2.20
 
 #include <esp_bt.h>
 #include <esp_wifi.h>
@@ -45,6 +54,16 @@
 #define CAMERA_MODEL_AI_THINKER
 
 #include "camera_pins.h"
+
+
+void initSPIFFS() {
+  if (!SPIFFS.begin()) {
+    Serial.println("An error has occurred while mounting SPIFFS");
+  }
+  Serial.println("SPIFFS mounted successfully");
+}
+
+
 
 /*
   Next one is an include with wifi credentials.
@@ -73,7 +92,7 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 // Called when receiving any WebSocket message
 void onWebSocketEvent(uint8_t num,
                       WStype_t type,
-                      uint8_t * payload,
+                      uint8_t* payload,
                       size_t length) {
 
   // Figure out the type of WebSocket event
@@ -94,10 +113,11 @@ void onWebSocketEvent(uint8_t num,
       break;
 
     // Echo text message back to client
-    case WStype_TEXT: {
+    case WStype_TEXT:
+      {
         Serial.printf("[%u] Text: %s\n", num, payload);
 
-        for (int i = 0 ; i < sizeof(payload); i++) {
+        for (int i = 0; i < sizeof(payload); i++) {
           Serial.print(char(payload[i]));
         }
 
@@ -116,17 +136,13 @@ void onWebSocketEvent(uint8_t num,
 
         if (joyDirection == "N") {
           forward();
-        }
-        else if (joyDirection == "S") {
+        } else if (joyDirection == "S") {
           backward();
-        }
-        else if (joyDirection == "W") {
+        } else if (joyDirection == "W") {
           leftSpin();
-        }
-        else if (joyDirection == "E") {
+        } else if (joyDirection == "E") {
           rightSpin();
-        }
-        else if (joyDirection == "C") {
+        } else if (joyDirection == "C") {
           stopMoving();
         }
 
@@ -183,36 +199,41 @@ void mjpegCB(void* pvParameters) {
 
   // Creating frame synchronization semaphore and initializing it
   frameSync = xSemaphoreCreateBinary();
-  xSemaphoreGive( frameSync );
+  xSemaphoreGive(frameSync);
 
   // Creating a queue to track all connected clients
-  streamingClients = xQueueCreate( 10, sizeof(WiFiClient*) );
+  streamingClients = xQueueCreate(10, sizeof(WiFiClient*));
 
   //=== setup section  ==================
 
   //  Creating RTOS task for grabbing frames from the camera
   xTaskCreatePinnedToCore(
-    camCB,        // callback
-    "cam",        // name
-    4096,         // stacj size
-    NULL,         // parameters
-    2,            // priority
-    &tCam,        // RTOS task handle
-    APP_CPU);     // core
+    camCB,     // callback
+    "cam",     // name
+    4096,      // stacj size
+    NULL,      // parameters
+    2,         // priority
+    &tCam,     // RTOS task handle
+    APP_CPU);  // core
 
   //  Creating task to push the stream to all connected clients
   xTaskCreatePinnedToCore(
     streamCB,
     "strmCB",
     4 * 1024,
-    NULL, //(void*) handler,
+    NULL,  //(void*) handler,
     2,
     &tStream,
     APP_CPU);
 
 
   //  Starting webserver
-  server.enableCORS(); //This is the magic
+  server.enableCORS();  //This is the magic
+
+  server.on("/", handleRoot);
+  server.on("/joy.js",handleJoyJs);
+
+
 
   //  Registering webserver handling routines
   server.on("/video", HTTP_GET, handleJPGSstream);
@@ -226,7 +247,7 @@ void mjpegCB(void* pvParameters) {
   server.on("/lightsOff", HTTP_GET, lightsOff);
 
   server.on("/stopMoving", HTTP_GET, stopMoving);
-
+  server.serveStatic("/", SPIFFS, "/");
   server.onNotFound(handleNotFound);
 
 
@@ -251,8 +272,8 @@ void mjpegCB(void* pvParameters) {
 
 
 // Commonly used variables:
-volatile size_t camSize;    // size of the current frame, byte
-volatile char* camBuf;      // pointer to the current frame
+volatile size_t camSize;  // size of the current frame, byte
+volatile char* camBuf;    // pointer to the current frame
 
 
 // ==== RTOS task to grab frames from the camera =========================
@@ -287,7 +308,7 @@ void camCB(void* pvParameters) {
     }
 
     //  Copy current frame into local buffer
-    char* b = (char*) cam.getfb();
+    char* b = (char*)cam.getfb();
     memcpy(fbs[ifb], b, s);
 
     //  Let other tasks run and wait until the end of the current frame rate interval (if any time left)
@@ -296,7 +317,7 @@ void camCB(void* pvParameters) {
 
     //  Only switch frames around if no frame is currently being streamed to a client
     //  Wait on a semaphore until client operation completes
-    xSemaphoreTake( frameSync, portMAX_DELAY );
+    xSemaphoreTake(frameSync, portMAX_DELAY);
 
     //  Do not allow interrupts while switching the current frame
     portENTER_CRITICAL(&xSemaphore);
@@ -307,11 +328,11 @@ void camCB(void* pvParameters) {
     portEXIT_CRITICAL(&xSemaphore);
 
     //  Let anyone waiting for a frame know that the frame is ready
-    xSemaphoreGive( frameSync );
+    xSemaphoreGive(frameSync);
 
     //  Technically only needed once: let the streaming task know that we have at least one frame
     //  and it could start sending frames to the clients, if any
-    xTaskNotifyGive( tStream );
+    xTaskNotifyGive(tStream);
 
     //  Immediately let other (streaming) tasks run
     taskYIELD();
@@ -319,7 +340,7 @@ void camCB(void* pvParameters) {
     //  If streaming task has suspended itself (no active clients to stream to)
     //  there is no need to grab frames from the camera. We can save some juice
     //  by suspedning the tasks
-    if ( eTaskGetState( tStream ) == eSuspended ) {
+    if (eTaskGetState(tStream) == eSuspended) {
       vTaskSuspend(NULL);  // passing NULL means "suspend yourself"
     }
   }
@@ -337,18 +358,17 @@ char* allocateMemory(char* aPtr, size_t aSize) {
   char* ptr = NULL;
 
   // If memory requested is more than 2/3 of the currently free heap, try PSRAM immediately
-  if ( aSize > freeHeap * 2 / 3 ) {
-    if ( psramFound() && ESP.getFreePsram() > aSize ) {
-      ptr = (char*) ps_malloc(aSize);
+  if (aSize > freeHeap * 2 / 3) {
+    if (psramFound() && ESP.getFreePsram() > aSize) {
+      ptr = (char*)ps_malloc(aSize);
     }
-  }
-  else {
+  } else {
     //  Enough free heap - let's try allocating fast RAM as a buffer
-    ptr = (char*) malloc(aSize);
+    ptr = (char*)malloc(aSize);
 
     //  If allocation on the heap failed, let's give PSRAM one more chance:
-    if ( ptr == NULL && psramFound() && ESP.getFreePsram() > aSize) {
-      ptr = (char*) ps_malloc(aSize);
+    if (ptr == NULL && psramFound() && ESP.getFreePsram() > aSize) {
+      ptr = (char*)ps_malloc(aSize);
     }
   }
 
@@ -361,8 +381,8 @@ char* allocateMemory(char* aPtr, size_t aSize) {
 
 
 // ==== STREAMING ======================================================
-const char HEADER[] = "HTTP/1.1 200 OK\r\n" \
-                      "Access-Control-Allow-Origin: *\r\n" \
+const char HEADER[] = "HTTP/1.1 200 OK\r\n"
+                      "Access-Control-Allow-Origin: *\r\n"
                       "Content-Type: multipart/x-mixed-replace; boundary=123456789000000000000987654321\r\n";
 const char BOUNDARY[] = "\r\n--123456789000000000000987654321\r\n";
 const char CTNTTYPE[] = "Content-Type: image/jpeg\r\nContent-Length: ";
@@ -371,11 +391,72 @@ const int bdrLen = strlen(BOUNDARY);
 const int cntLen = strlen(CTNTTYPE);
 
 
+
+
+// https://www.gabrielcsapo.com/arduino-web-server-esp-32/
+// A helper function that deals with loading from SPIFFS
+bool loadFromSPIFFS(String path) {
+  String dataType = "text/html";
+ 
+  Serial.print("Requested page -> ");
+  Serial.println(path);
+
+  if (SPIFFS.exists(path)){
+      File dataFile = SPIFFS.open(path, "r");
+      if (!dataFile) {
+          handleNotFound();
+          return false;
+      }
+ 
+      if (server.streamFile(dataFile, dataType) != dataFile.size()) {
+        Serial.println("Sent less data than expected!");
+      }else{
+          Serial.println("Page served!");
+      }
+ 
+      dataFile.close();
+  }else{
+      handleNotFound();
+      return false;
+  }
+  return true;
+}
+ 
+// Handle root url (/)
+void handleRoot() {
+  loadFromSPIFFS("/joy.html");
+}
+
+// Handle root url (/)
+void handleJoyJs() {
+  loadFromSPIFFS("/joy.js");
+}
+
+// 
+// void handleNotFound() {
+//   String message = "File Not Found\n\n";
+//   message += "URI: ";
+//   message += server.uri();
+//   message += "\nMethod: ";
+//   message += (server.method() == HTTP_GET) ? "GET" : "POST";
+//   message += "\nArguments: ";
+//   message += server.args();
+//   message += "\n";
+ 
+//   for (uint8_t i = 0; i < server.args(); i++) {
+//     message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+//   }
+ 
+//   server.send(404, "text/plain", message);
+// }
+
+
+
+
 // ==== Handle connection request from clients ===============================
-void handleJPGSstream(void)
-{
+void handleJPGSstream(void) {
   //  Can only acommodate 10 clients. The limit is a default for WiFi connections
-  if ( !uxQueueSpacesAvailable(streamingClients) ) return;
+  if (!uxQueueSpacesAvailable(streamingClients)) return;
 
 
   //  Create a new WiFi Client object to keep track of this one
@@ -387,24 +468,24 @@ void handleJPGSstream(void)
   client->write(BOUNDARY, bdrLen);
 
   // Push the client to the streaming queue
-  xQueueSend(streamingClients, (void *) &client, 0);
+  xQueueSend(streamingClients, (void*)&client, 0);
 
   // Wake up streaming tasks, if they were previously suspended:
-  if ( eTaskGetState( tCam ) == eSuspended ) vTaskResume( tCam );
-  if ( eTaskGetState( tStream ) == eSuspended ) vTaskResume( tStream );
+  if (eTaskGetState(tCam) == eSuspended) vTaskResume(tCam);
+  if (eTaskGetState(tStream) == eSuspended) vTaskResume(tStream);
 }
 
 
 // ==== Actually stream content to all connected clients ========================
-void streamCB(void * pvParameters) {
+void streamCB(void* pvParameters) {
   char buf[16];
   TickType_t xLastWakeTime;
   TickType_t xFrequency;
 
   //  Wait until the first frame is captured and there is something to send
   //  to clients
-  ulTaskNotifyTake( pdTRUE,          /* Clear the notification value before exiting. */
-                    portMAX_DELAY ); /* Block indefinitely. */
+  ulTaskNotifyTake(pdTRUE,         /* Clear the notification value before exiting. */
+                   portMAX_DELAY); /* Block indefinitely. */
 
   xLastWakeTime = xTaskGetTickCount();
   for (;;) {
@@ -413,14 +494,14 @@ void streamCB(void * pvParameters) {
 
     //  Only bother to send anything if there is someone watching
     UBaseType_t activeClients = uxQueueMessagesWaiting(streamingClients);
-    if ( activeClients ) {
+    if (activeClients) {
       // Adjust the period to the number of connected clients
       xFrequency /= activeClients;
 
       //  Since we are sending the same frame to everyone,
       //  pop a client from the the front of the queue
-      WiFiClient *client;
-      xQueueReceive (streamingClients, (void*) &client, 0);
+      WiFiClient* client;
+      xQueueReceive(streamingClients, (void*)&client, 0);
 
       //  Check if this client is still connected.
 
@@ -428,31 +509,29 @@ void streamCB(void * pvParameters) {
         //  delete this client reference if s/he has disconnected
         //  and don't put it back on the queue anymore. Bye!
         delete client;
-      }
-      else {
+      } else {
 
         //  Ok. This is an actively connected client.
         //  Let's grab a semaphore to prevent frame changes while we
         //  are serving this frame
-        xSemaphoreTake( frameSync, portMAX_DELAY );
+        xSemaphoreTake(frameSync, portMAX_DELAY);
 
         client->write(CTNTTYPE, cntLen);
         sprintf(buf, "%d\r\n\r\n", camSize);
         client->write(buf, strlen(buf));
-        client->write((char*) camBuf, (size_t)camSize);
+        client->write((char*)camBuf, (size_t)camSize);
         client->write(BOUNDARY, bdrLen);
 
         // Since this client is still connected, push it to the end
         // of the queue for further processing
-        xQueueSend(streamingClients, (void *) &client, 0);
+        xQueueSend(streamingClients, (void*)&client, 0);
 
         //  The frame has been served. Release the semaphore and let other tasks run.
         //  If there is a frame switch ready, it will happen now in between frames
-        xSemaphoreGive( frameSync );
+        xSemaphoreGive(frameSync);
         taskYIELD();
       }
-    }
-    else {
+    } else {
       //  Since there are no connected clients, there is no reason to waste battery running
       vTaskSuspend(NULL);
     }
@@ -464,14 +543,13 @@ void streamCB(void * pvParameters) {
 
 
 
-const char JHEADER[] = "HTTP/1.1 200 OK\r\n" \
-                       "Content-disposition: inline; filename=capture.jpg\r\n" \
+const char JHEADER[] = "HTTP/1.1 200 OK\r\n"
+                       "Content-disposition: inline; filename=capture.jpg\r\n"
                        "Content-type: image/jpeg\r\n\r\n";
 const int jhdLen = strlen(JHEADER);
 
 // ==== Serve up one JPEG frame =============================================
-void handleJPG(void)
-{
+void handleJPG(void) {
   WiFiClient client = server.client();
 
   if (!client.connected()) return;
@@ -482,8 +560,7 @@ void handleJPG(void)
 
 
 // ==== Handle invalid URL requests ============================================
-void handleNotFound()
-{
+void handleNotFound() {
   String message = "Server is running!\n\n";
   message += "URI: ";
   message += server.uri();
@@ -498,12 +575,13 @@ void handleNotFound()
 
 
 // ==== SETUP method ==================================================================
-void setup()
-{
+void setup() {
 
   // Setup Serial connection:
   Serial.begin(115200);
-  delay(1000); // wait for a second to let Serial connect
+  delay(1000);  // wait for a second to let Serial connect
+
+  initSPIFFS();
 
 
   // Configure the camera
@@ -561,7 +639,7 @@ void setup()
   //  }
   //  ip = WiFi.localIP();
 
-  WiFi.mode(WIFI_AP);           //Only Access point
+  WiFi.mode(WIFI_AP);  //Only Access point
   WiFi.softAP("ESP-drone", "33184699") ? "Ready" : "Failed!";
   IPAddress ip = WiFi.softAPIP();
 
@@ -592,7 +670,7 @@ void setup()
   pinMode(14, OUTPUT);
 
   // FLIP camera
-  sensor_t * camptr = esp_camera_sensor_get();
+  sensor_t* camptr = esp_camera_sensor_get();
   camptr->set_vflip(camptr, true);
 }
 
