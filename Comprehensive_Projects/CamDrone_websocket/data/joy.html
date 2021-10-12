@@ -32,63 +32,179 @@
   <meta name="author" content="Roberto D'Amico">
   <link rel="shortcut icon" type="image/png" href="http://bobboteck.github.io/img/roberto-damico-bobboteck.png">
   <style>
-    * {
-      box-sizing: border-box;
+    @media screen and (min-width: 641px) and (max-width:1024px) {
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0px;
+        padding: 0px;
+        font-family: monospace;
+      }
+
+      .row {
+        display: inline-flex;
+        clear: both;
+      }
+
+      .columnLateral {
+        float: left;
+        width: 15%;
+        min-width: 300px;
+      }
+
+      .columnCetral {
+        float: left;
+        width: 70%;
+        min-width: 300px;
+      }
+
+      #joy2Div {
+        width: 200px;
+        height: 200px;
+        margin: 50px
+      }
+
+      #joystick {
+        border: 1px solid #FF0000;
+      }
+
+      #joystick2 {
+        border: 1px solid #0000FF;
+      }
+
+      #joy3Div {
+        width: 200px;
+        height: 200px;
+        /* margin: 50px; */
+        position: fixed;
+        bottom: 0px;
+        left: 0px;
+      }
+
+      #div__video_stream {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      #img__video_stream {
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+      }
+
+
     }
 
-    body {
-      margin: 0px;
-      padding: 0px;
-      font-family: monospace;
+    @media screen and (max-width: 640px) {
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0px;
+        padding: 0px;
+        font-family: monospace;
+      }
+
+      .row {
+        display: inline-flex;
+        clear: both;
+      }
+
+      .columnLateral {
+        float: left;
+        width: 15%;
+        min-width: 300px;
+      }
+
+      .columnCetral {
+        float: left;
+        width: 70%;
+        min-width: 300px;
+      }
+
+      #joy2Div {
+        width: 200px;
+        height: 200px;
+        margin: 50px
+      }
+
+      #joystick {
+        border: 1px solid #FF0000;
+      }
+
+      #joystick2 {
+        border: 1px solid #0000FF;
+      }
+
+      #joy3Div {
+        width: 200px;
+        height: 200px;
+        /* margin: 50px; */
+        position: fixed;
+        bottom: 10px;
+        left: 50px;
+      }
+
+      #div__video_stream {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      #img__video_stream {
+        margin-left: auto;
+        margin-right: auto;
+      }
     }
 
-    .row {
-      display: inline-flex;
-      clear: both;
-    }
+    #button__light_switch {
+      position: fixed;
+      bottom: 25px;
+      right: 50px;
+      background-color: aliceblue;
+      border-radius: 20%;
+      width: 100px;
+      height: 100px;
 
-    .columnLateral {
-      float: left;
-      width: 15%;
-      min-width: 300px;
-    }
-
-    .columnCetral {
-      float: left;
-      width: 70%;
-      min-width: 300px;
-    }
-
-    #joy2Div {
-      width: 200px;
-      height: 200px;
-      margin: 50px
-    }
-
-    #joystick {
-      border: 1px solid #FF0000;
-    }
-
-    #joystick2 {
-      border: 1px solid #0000FF;
     }
   </style>
+
   <script src="joy.js"></script>
 </head>
 
 <body>
-  <img src='http://192.168.4.1/video' />
+  <div id="div__video_stream">
+    <img id='img__video_stream' src='http://192.168.4.1/video' />
+  </div>
+
   <!-- Example of FIXED or ABSOLUTE position -->
-  <div id="joy3Div" style="width:200px;height:200px;margin:50px;position:fixed;bottom:30px;left:500px;"></div>
-  
-  <div style="position:fixed;bottom:125px;left:750px;">
+  <div id="joy3Div" style="z-index: 10;"></div>
+
+  <div style="position:fixed;bottom:125px;left:750px;visibility:hidden;">
     Posizione X:<input id="joy3PosizioneX" type="text" /><br />
     Posizione Y:<input id="joy3PosizioneY" type="text" /><br />
     Direzione:<input id="joy3Direzione" type="text" /><br />
-    X :<input id="joy3X" type="text" /><br/>
+    X :<input id="joy3X" type="text" /><br />
     Y :<input id="joy3Y" type="text" />
   </div>
+
+  <button id="button__light_switch">Lights Off</button>
+
+
+  <!-- JavaScript -->
   <script type="text/javascript">
+
+    // Get the current page scroll position
+    scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    scrollLeft = window.pageXOffset || document.documentElement.scrollLeft,
+
+      // if any scroll is attempted, set this to the previous value
+      window.onscroll = function () {
+        window.scrollTo(scrollLeft, scrollTop);
+      };
+
 
     var exampleSocket = new WebSocket("ws://192.168.4.1:81");
 
@@ -102,16 +218,89 @@
     var joy3X = document.getElementById("joy3X");
     var joy3Y = document.getElementById("joy3Y");
 
+
     setInterval(function () { joy3IinputPosX.value = Joy3.GetPosX(); }, 50);
     setInterval(function () { joy3InputPosY.value = Joy3.GetPosY(); }, 50);
     setInterval(function () { joy3Direzione.value = Joy3.GetDir(); }, 50);
     setInterval(function () { joy3X.value = Joy3.GetX(); }, 50);
     setInterval(function () { joy3Y.value = Joy3.GetY(); }, 50);
-    
-    setInterval(function(){
+
+    // Sends control message every 0.1 sec
+    setInterval(function () {
       exampleSocket.send(`{ "joyDirection" : "${joy3Direzione.value}" , "joy3X" : ${joy3X.value} , "joy3Y" : ${joy3Y.value} }`)
-    },100);
+    }, 100);
   </script>
+
+
+  <script type="text/javascript">
+
+    let button__light_switch = document.getElementById("button__light_switch");
+
+    let lights_on = false;
+
+    button__light_switch.addEventListener("click", () => {
+      console.log("clicked!");
+
+      // Change to the other state.
+      lights_on = !lights_on;
+      console.log(lights_on);
+
+      // if the light is on now:
+      if (lights_on == true) {
+        button__light_switch.innerHTML = "Turn On"
+        lightsOff();
+      }
+      // light is off now, turn it on:
+      else if (lights_on == false) {
+        button__light_switch.innerHTML = "Turn Off"
+        lightsOn()
+
+      }
+
+    })
+
+    function lightsOn() {
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", "http://192.168.4.1/lightsOn", true);
+      xhr.onload = function (e) {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            console.log(xhr.responseText);
+          } else {
+            console.error(xhr.statusText);
+          }
+        }
+      };
+      xhr.onerror = function (e) {
+        console.error(xhr.statusText);
+      };
+      xhr.send(null);
+    }
+
+
+    function lightsOff() {
+      var xhr = new XMLHttpRequest();
+      xhr.open("GET", "http://192.168.4.1/lightsOff", true);
+      xhr.onload = function (e) {
+        if (xhr.readyState === 4) {
+          if (xhr.status === 200) {
+            console.log(xhr.responseText);
+          } else {
+            console.error(xhr.statusText);
+          }
+        }
+      };
+      xhr.onerror = function (e) {
+        console.error(xhr.statusText);
+      };
+      xhr.send(null);
+    }
+
+
+
+  </script>
+
+
 </body>
 
 </html>
